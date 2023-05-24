@@ -4,3 +4,6 @@ python-socketio
 eventlet
 openai
 python-dotenv
+python-decouple
+pyjwt
+pymongo

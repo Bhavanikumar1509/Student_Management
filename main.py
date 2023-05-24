@@ -1,78 +1,80 @@
-"""
-this is a student Management project using python FastAPI and mongodb
+""" This is Employee Management System . In  which 
+we can perform crud operations on employee details. """
 
-
-"""
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pymongo import MongoClient
 from pydantic import BaseModel
+from datetime import datetime
+from auth.jwt_handler import signJWT
 
 client = MongoClient('mongodb://172.17.0.2:27017/')
 '''docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' <container_name> 
 to find the  mongo db container ipaddress
 '''
 db = client['mydatabase']
-collection = db['mycollection']
-
+collection = db['myEmployee']
 app = FastAPI()
-class Student(BaseModel):
-    '''this is student class with parameters id,name, age and marks'''
-    id:int
+class Employee(BaseModel):
     name:str
-    age:int
-    marks:int
-@app.get("/students")
+    empid: int 
+    password:str
+    empSalary: float
+    Department: str
+    Date_of_joining: datetime
+    class cofig:
+        the_schema={
+            "user_demo":{
+                "name":"beck",
+                "empid":123,
+                "empSalary":223.66,
+                "Department":"java",
+                "Date_of_joining":"2021-05-12T06:11:38.268000"
+            }
+        }
+           
+#create an employee
+@app.post("/addEmployee" )
+async def create_employee(employee:Employee):
+    """this is the method useing for creating the employee"""
+    user_data=employee.dict()
+    res=collection.insert_one(user_data)
+    return {"message":"user added sucessfully with ","_id": str(res.inserted_id)}
 
-async def get_students():
-    '''this method is used to get all the studdents using get API Call'''
-    data = []
+
+#get All Employee
+@app.get("/getEmployees")
+async def get_employees():
+    data=[]
     for doc in collection.find():
-        # convert the ObjectId to string
-        doc['_id'] = str(doc['_id'])
+        doc['_id']=str(doc['_id'])
         data.append(doc)
     return data
 
-
-#create a student
-@app.post("/createStudent")
-async def create_new_student(student: Student):
-    '''this method is use for creating a new student'''
-    user_data = student.dict()
-    result = collection.insert_one(user_data)
-    return {'message': 'User added successfully', 'id': str(result.inserted_id)}
-
-#update student by id
-@app.patch("/UpdateStudents")
-async def update_student(id:int, student:Student):
-    '''this method is used to update student'''
-    if collection.find_one({"id":id}) is None:
-        return {"error":"id not found"}
-    update_data=student.dict(exclude_unset=True)
-    result = collection.update_one({"id": id}, {"$set": update_data})
-    if result.modified_count == 1:
-        return {"message": "Student updated successfully"}
-    else:
-        return {"error": "Failed to update student"}
-@app.delete("/deleteStudents")
-async def delete_Student(id:int):
-    '''this method is used to delte student id based on the gicen id'''
-    if collection.find_one({"id":id}) is None:
-        return {"error":"id not found"}
-    collection.delete_one({"id":id})
-    return {"message":"sucesfully deleted"}
-
-
-#get students based on their age
-@app.get("/student/gae")
-async def student_by_age(age:int):
-    stud=[]
-    k=collection.find({"age":age})
+#get employee by id
+@app.get("/getbyId")
+async def get_by_id(empid:int):
+    emp=[]
+    k=collection.find({"empid":empid})
     for doc in k:
         doc['_id'] = str(doc['_id'])
-        stud.append(doc)
-    return stud
-         
-#get students based on their marks
-#get student by id
+        emp.append(doc)
+    return emp
 
-
+# get employee by department
+@app.get("/getbydepartment")
+async def get_by_department(department:str):
+    emp=[]
+    k=collection.find({"Department":department})
+    for doc in k:
+        doc['_id']=str(doc['_id'])
+        emp.append(doc)
+    return emp
+# update employee salary based on the given id
+# delete employee
+@app.delete("/deleteEmployee")
+async def delete_Student(id:int):
+    '''this method is used to delete Employee base don the  given id'''
+    if collection.find_one({"empid":id}) is None:
+        return {"error":"id not found"}
+    collection.delete_one({"empid":id})
+    return {"message":"sucesfully deleted"}
